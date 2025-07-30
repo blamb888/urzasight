@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Urzasight - Manga Reading Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+        
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .upload-section, .results-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        
+        .upload-area:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+        
+        .upload-area.dragover {
+            background: #e8f4fd;
+            border-color: #2196F3;
+        }
+        
+        .upload-icon {
+            font-size: 3em;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .upload-btn {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: transform 0.2s;
+        }
+        
+        .upload-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-top: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .process-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1.1em;
+            margin-top: 15px;
+            width: 100%;
+            transition: all 0.3s;
+        }
+        
+        .process-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+        
+        .process-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .results {
+            display: none;
+        }
+        
+        .result-section {
+            margin-bottom: 25px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .result-section h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+        
+        .japanese-text {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-family: 'Yu Gothic', 'Hiragino Sans', sans-serif;
+            line-height: 1.6;
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+        }
+        
+        .translation {
+            font-size: 1.1em;
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+        
+        .grammar-breakdown {
+            background: white;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 0.95em;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        
+        .cultural-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 0.95em;
+            line-height: 1.5;
+            white-space: pre-wrap;
+        }
+        
+        .api-config {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 20px;
+        }
+        
+        .config-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .config-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .config-group label {
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        .config-group input, .config-group select {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        
+        .config-group input:focus, .config-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        @media (max-width: 768px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+            
+            .config-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎌 Urzasight</h1>
+            <p>Your AI-Powered Manga Reading Assistant</p>
+        </div>
+        
+        <div class="api-config">
+            <h2>🔧 API Configuration</h2>
+            <div class="config-grid">
+                <div class="config-group">
+                    <label for="ocrService">OCR Service:</label>
+                    <select id="ocrService">
+                        <option value="google">Google Cloud Vision</option>
+                        <option value="mock">Mock OCR (for testing)</option>
+                    </select>
+                </div>
+                <div class="config-group">
+                    <label for="apiKey">Google Vision API Key:</label>
+                    <input type="password" id="apiKey" placeholder="Enter your Google Vision API key">
+                </div>
+                <div class="config-group">
+                    <label for="llmService">Translation Service:</label>
+                    <select id="llmService">
+                        <option value="claude">Claude API</option>
+                        <option value="mock">Mock Translation (for testing)</option>
+                    </select>
+                </div>
+                <div class="config-group">
+                    <label for="llmKey">Claude API Key:</label>
+                    <input type="password" id="llmKey" placeholder="Enter your Claude API key">
+                </div>
+            </div>
+        </div>
+        
+        <div class="main-content">
+            <div class="upload-section">
+                <h2>📸 Upload Manga Page</h2>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">📱</div>
+                    <p>Drag & drop a manga image here<br>or click to select</p>
+                    <input type="file" id="fileInput" class="file-input" accept="image/*">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                        Choose Image
+                    </button>
+                </div>
+                <img id="previewImage" class="preview-image" style="display: none;">
+                <button id="processBtn" class="process-btn" disabled>
+                    🔍 Analyze Manga Text
+                </button>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Processing your manga page...</p>
+                </div>
+            </div>
+            
+            <div class="results-section">
+                <h2>📖 Analysis Results</h2>
+                <div class="results" id="results">
+                    <div class="result-section">
+                        <h3>🇯🇵 Extracted Japanese Text</h3>
+                        <div class="japanese-text" id="japaneseText">
+                            Results will appear here after processing...
+                        </div>
+                    </div>
+                    
+                    <div class="result-section">
+                        <h3>🌍 Translation</h3>
+                        <div class="translation" id="translation">
+                            English translation will appear here...
+                        </div>
+                    </div>
+                    
+                    <div class="result-section">
+                        <h3>📝 Grammar Breakdown</h3>
+                        <div class="grammar-breakdown" id="grammarBreakdown">
+                            Detailed grammar analysis will appear here...
+                        </div>
+                    </div>
+                    
+                    <div class="result-section">
+                        <h3>🏮 Cultural Context</h3>
+                        <div class="cultural-note" id="culturalNote">
+                            Cultural insights and context will appear here...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let selectedFile = null;
+        
+        // DOM elements
+        const fileInput = document.getElementById('fileInput');
+        const uploadArea = document.getElementById('uploadArea');
+        const previewImage = document.getElementById('previewImage');
+        const processBtn = document.getElementById('processBtn');
+        const loading = document.getElementById('loading');
+        const results = document.getElementById('results');
+        
+        // File upload handling
+        fileInput.addEventListener('change', handleFileSelect);
+        uploadArea.addEventListener('click', () => fileInput.click());
+        uploadArea.addEventListener('dragover', handleDragOver);
+        uploadArea.addEventListener('drop', handleDrop);
+        uploadArea.addEventListener('dragenter', e => e.preventDefault());
+        uploadArea.addEventListener('dragleave', e => uploadArea.classList.remove('dragover'));
+        
+        processBtn.addEventListener('click', processImage);
+        
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                displayImage(file);
+            }
+        }
+        
+        function handleDragOver(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        }
+        
+        function handleDrop(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                displayImage(file);
+            }
+        }
+        
+        function displayImage(file) {
+            selectedFile = file;
+            const reader = new FileReader();
+            reader.onload = e => {
+                previewImage.src = e.target.result;
+                previewImage.style.display = 'block';
+                processBtn.disabled = false;
+            };
+            reader.readAsDataURL(file);
+        }
+        
+        async function processImage() {
+            if (!selectedFile) return;
+            
+            showLoading(true);
+            
+            try {
+                const ocrService = document.getElementById('ocrService').value;
+                
+                if (ocrService === 'mock') {
+                    // Mock processing
+                    const mockText = getMockOCRText();
+                    const mockAnalysis = getMockAnalysis(mockText);
+                    displayResults(mockText, mockAnalysis);
+                } else {
+                    // Real API processing
+                    await processWithBackend();
+                }
+                
+            } catch (error) {
+                console.error('Processing error:', error);
+                alert('Error processing image: ' + error.message);
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        async function processWithBackend() {
+            const apiKey = document.getElementById('apiKey').value;
+            const llmService = document.getElementById('llmService').value;
+            
+            if (!apiKey) {
+                throw new Error('Google Vision API key required');
+            }
+            
+            // Convert file to base64
+            const base64 = await fileToBase64(selectedFile);
+            
+            // Call backend
+            const response = await fetch('http://localhost:5000/api/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    image: base64,
+                    ocr_service: 'google',
+                    llm_service: llmService,
+                    ocr_api_key: apiKey
+                })
+            });
+            
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.error || 'Processing failed');
+            }
+            
+            const result = await response.json();
+            
+            // Convert backend response to frontend format
+            const analysis = result.analysis;
+            const displayAnalysis = {
+                translation: analysis.translation,
+                grammar: analysis.grammar_breakdown,
+                cultural: analysis.cultural_context,
+                vocabulary: analysis.vocabulary || [],
+                difficulty: analysis.difficulty_level,
+                tone: analysis.tone
+            };
+            
+            displayResults(result.extracted_text, displayAnalysis);
+        }
+        
+        function getMockOCRText() {
+            const mockTexts = [
+                "こんにちは！元気ですか？",
+                "今日はいい天気ですね。",
+                "頑張って！",
+                "ありがとうございます。",
+                "おはようございます！魔法の練習を始めましょう！"
+            ];
+            return mockTexts[Math.floor(Math.random() * mockTexts.length)];
+        }
+        
+        function getMockAnalysis(japaneseText) {
+            const analyses = {
+                "こんにちは！元気ですか？": {
+                    translation: "Hello! How are you?",
+                    grammar: "こんにちは (konnichiwa) - Standard greeting meaning 'hello' or 'good afternoon'\n元気 (genki) - Adjective meaning 'healthy/energetic/fine'\nです (desu) - Polite copula\nか (ka) - Question particle",
+                    cultural: "This is a very common casual greeting in Japanese. こんにちは can be used from late morning through afternoon. Asking about someone's health/energy level (元気) is a standard way to show care and interest.",
+                    vocabulary: [
+                        { word: "こんにちは", reading: "konnichiwa", meaning: "hello", notes: "Standard daytime greeting" },
+                        { word: "元気", reading: "genki", meaning: "healthy/energetic", notes: "Common in greetings" }
+                    ],
+                    difficulty: "Beginner",
+                    tone: "Friendly and casual"
+                },
+                "おはようございます！魔法の練習を始めましょう！": {
+                    translation: "Good morning! Let's start practicing magic!",
+                    grammar: "おはよう (ohayou) - 'Good morning' in casual form\nございます (gozaimasu) - Polite ending\n魔法 (mahou) - 'Magic'\nの (no) - Possessive particle\n練習 (renshuu) - 'Practice'\nを (wo) - Object particle\n始める (hajimeru) - 'To start/begin'\nましょう (mashou) - Volitional form 'let's do'",
+                    cultural: "This sounds like dialogue from a magical/fantasy manga! The use of ましょう shows the speaker is suggesting a group activity. Magic-themed manga often uses this kind of encouraging, energetic language.",
+                    vocabulary: [
+                        { word: "おはよう", reading: "ohayou", meaning: "good morning", notes: "Casual morning greeting" },
+                        { word: "魔法", reading: "mahou", meaning: "magic", notes: "Common in fantasy manga" },
+                        { word: "練習", reading: "renshuu", meaning: "practice", notes: "Noun form of practice" }
+                    ],
+                    difficulty: "Intermediate",
+                    tone: "Enthusiastic and encouraging"
+                }
+            };
+            
+            return analyses[japaneseText] || {
+                translation: "Translation for this text...",
+                grammar: "Grammar breakdown would appear here...",
+                cultural: "Cultural context would be provided here...",
+                vocabulary: [],
+                difficulty: "Unknown",
+                tone: "Unable to determine"
+            };
+        }
+        
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = error => reject(error);
+            });
+        }
+        
+        function displayResults(japaneseText, analysis) {
+            document.getElementById('japaneseText').textContent = japaneseText;
+            document.getElementById('translation').textContent = analysis.translation;
+            document.getElementById('grammarBreakdown').textContent = analysis.grammar;
+            document.getElementById('culturalNote').textContent = analysis.cultural;
+            
+            // Add vocabulary section if available
+            if (analysis.vocabulary && analysis.vocabulary.length > 0) {
+                const grammarDiv = document.getElementById('grammarBreakdown');
+                
+                let vocabHTML = analysis.grammar + '\n\n📚 Key Vocabulary:\n';
+                analysis.vocabulary.forEach(word => {
+                    vocabHTML += `\n• ${word.word} (${word.reading || ''}) - ${word.meaning}`;
+                    if (word.notes) vocabHTML += ` [${word.notes}]`;
+                });
+                
+                grammarDiv.textContent = vocabHTML;
+            }
+            
+            // Add difficulty and tone info if available
+            if (analysis.difficulty || analysis.tone) {
+                const culturalDiv = document.getElementById('culturalNote');
+                let culturalText = analysis.cultural;
+                
+                if (analysis.difficulty) {
+                    culturalText += `\n\n📊 Difficulty Level: ${analysis.difficulty}`;
+                }
+                if (analysis.tone) {
+                    culturalText += `\n🎭 Tone: ${analysis.tone}`;
+                }
+                
+                culturalDiv.textContent = culturalText;
+            }
+            
+            results.style.display = 'block';
+        }
+        
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+            processBtn.disabled = show;
+        }
+    </script>
+</body>
+</html>
